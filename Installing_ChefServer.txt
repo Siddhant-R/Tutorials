@@ -1,0 +1,45 @@
+##################  Setting Up Chef Server
+
+##### Prereq
+# Forward of using vagrant, inbound access (including firewall) on port 443 (HTTPS).
+
+##### Install Chef Server
+#copy PAKAGE_URL from downloaded page
+#https://downloads.chef.io/chef-server/ubuntu/
+sudo apt-get install wget -y
+wget PACKAGE_URL
+sudo dpkg -i PACKAGE_NAME
+
+
+##### Write the chef server configuration file
+### First, get the fully-qualified domain name (FQDN) for your Chef server that's 
+# accessible from the rest of your network. Then write out /etc/opscode/chef-server.rb, # like this, replacing CHEF_SERVER_FQDN with your Chef server's FQDN.
+
+vim /etc/opscode/chef-server.rb
+
+server_name = "CHEF_SERVER_FQDN"
+api_fqdn server_name
+bookshelf['vip'] = server_name
+nginx['url'] = "https://#{server_name}"
+nginx['server_name'] = server_name
+nginx['ssl_certificate'] = "/var/opt/opscode/nginx/ca/#{server_name}.crt"
+nginx['ssl_certificate_key'] = "/var/opt/opscode/nginx/ca/#{server_name}.key"
+
+## FIX
+# Fix error 1
+sudo mkdir /usr/lib/systemd/system
+# Fix Error 2: /etc/opscode/pivotal.pem is missing error
+cp /opt/opscode/embedded/service/omnibus-ctl/spec/fixtures/pivotal.pem /etc/opscode/
+
+#### Apply the configuration and start the server
+sudo chef-server-ctl reconfigure
+
+#### Install the management console and reporting features
+## Run these commands on your Chef server to install the management console.(WEB UI_)
+sudo chef-server-ctl install chef-manage
+sudo chef-server-ctl reconfigure
+sudo chef-manage-ctl reconfigure
+## Then run these commands to install the reporting feature.
+sudo chef-server-ctl install opscode-reporting
+sudo chef-server-ctl reconfigure
+sudo opscode-reporting-ctl reconfigure
